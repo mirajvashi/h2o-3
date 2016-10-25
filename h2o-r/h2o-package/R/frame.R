@@ -2678,43 +2678,62 @@ h2o.range <- function(x,na.rm = FALSE,finite = FALSE) {
 #'
 #' @param x An \code{R} data frame.
 #' @param destination_frame A string with the desired name for the H2OFrame.
-#' @param sparse Optional boolean flag indicating whether parameter x should be treated as a sparse matrix.
-#'        Sparse matrices from package Matrix are automatically treated as sparse.
 #' @export
-as.h2o <- function(x, destination_frame= "", sparse = NULL) {
+as.h2o <-function(x, destination_frame="", ...) {
   .key.validate(destination_frame)
+  UseMethod("as.h2o")
+}
 
+as.h2o.default <- function(x, destination_frame="", ...) {
+  x <- if( length(x)==1L )
+    data.frame(C1=x)
+  else
+    as.data.frame(x, ...)
+  as.h2o.data.frame(x, destination_frame=destination_frame)
+}
+
+h2o.class.map <- function()
+  c("integer64"="numeric",
+    "integer"="numeric",
+    "double"="numeric",
+    "complex"="numeric",
+    "logical"="enum",
+    "factor"="enum",
+    "character"="string",
+    "Date"="Time")
+
+as.h2o.data.frame <- function(x, destination_frame= "", ...) {
   dest_name <- if( destination_frame=="") deparse(substitute(x)) else destination_frame
   if( nzchar(dest_name) && regexpr("^[a-zA-Z_][a-zA-Z0-9_.]*$", dest_name)[1L] == -1L )
     dest_name <- destination_frame
 
-  if (is.null(sparse))
-    sparse = .h2o.is.sparse.matrix(x)
+  # TODO: Be careful, there might be a limit on how long a vector you can define in console
+  tmpf <- tempfile(fileext = ".csv")
+  types <- sapply(x, class)
+  types <- gsub("integer64", "numeric", types)
+  types <- gsub("integer", "numeric", types)
+  types <- gsub("double", "numeric", types)
+  types <- gsub("complex", "numeric", types)
+  types <- gsub("logical", "enum", types)
+  types <- gsub("factor", "enum", types)
+  types <- gsub("character", "string", types)
+  types <- gsub("Date", "Time", types)
+  write.csv(x, file = tmpf, row.names = FALSE, na="NA_h2o")
+  h2f <- h2o.uploadFile(tmpf, destination_frame = dest_name, header = TRUE, col.types=types,
+                        col.names=colnames(x, do.NULL=FALSE, prefix="C"), na.strings=rep(c("NA_h2o"),ncol(x)))
+}
 
-  if (sparse) {
-    tmpf <- tempfile(fileext = ".svm")
-    .h2o.write.matrix.svmlight(x, file = tmpf)
-    h2f <- .h2o.readSVMLight(tmpf, destination_frame = dest_name)
-  } else {
-    # TODO: Be careful, there might be a limit on how long a vector you can define in console
-    if(!is.data.frame(x))
-      if( length(x)==1L ) x <- data.frame(C1=x)
-      else                x <- as.data.frame(x)
-    tmpf <- tempfile(fileext = ".csv")
-    types <- sapply(x, class)
-    types <- gsub("integer64", "numeric", types)
-    types <- gsub("integer", "numeric", types)
-    types <- gsub("double", "numeric", types)
-    types <- gsub("complex", "numeric", types)
-    types <- gsub("logical", "enum", types)
-    types <- gsub("factor", "enum", types)
-    types <- gsub("character", "string", types)
-    types <- gsub("Date", "Time", types)
-    write.csv(x, file = tmpf, row.names = FALSE, na="NA_h2o")
-    h2f <- h2o.uploadFile(tmpf, destination_frame = dest_name, header = TRUE, col.types=types,
-                          col.names=colnames(x, do.NULL=FALSE, prefix="C"), na.strings=rep(c("NA_h2o"),ncol(x)))
-  }
+  file.remove(tmpf)
+  h2f
+}
 
+as.h2o.Matrix <- function(x, destination_frame="", ...) {
+  sparse <- .h2o.is.sparse.matrix(x)
+  if(!sparse)
+    return(as.h2o.default(x, destination_frame=destination_frame, ...))
+  tmpf <- tempfile(fileext = ".svm")
+  .h2o.write.matrix.svmlight(x, file = tmpf)
+  h2f <- .h2o.readSVMLight(tmpf, destination_frame = dest_name)
   file.remove(tmpf)
   h2f
 }
