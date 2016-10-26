@@ -354,10 +354,10 @@ h2o.createFrame <- function(rows = 10000, cols = 10, randomize = TRUE,
   if(!is.numeric(missing_fraction)) stop("`missing_fraction` must be a numeric value")
   if(!is.numeric(response_factors)) stop("`response_factors` must be a numeric value")
   if(!is.logical(has_response)) stop("`has_response` must be a logical value")
-
+  
   parms <- lapply(as.list(match.call(expand.dots = FALSE)[-1L]), eval.parent, 2)  # depth must be 2 in order to pop out of the lapply scope...
   parms$dest = .key.make("RTMP")
-
+  
   res <- .h2o.__remoteSend(.h2o.__CREATE_FRAME, method = "POST", .params = parms)
   .h2o.__waitOnJob(res$key$name)
   fr <- .newH2OFrame("createFrame",parms$dest,-1,-1)
@@ -427,9 +427,9 @@ h2o.interaction <- function(data, destination_frame, factors, pairwise, max_fact
   if(!is.logical(pairwise)) stop("pairwise must be a boolean value")
   if(missing(max_factors)) stop("max_factors must be specified")
   if(missing(min_occurrence)) stop("min_occurrence must be specified")
-
+  
   if (is.list(factors)) {
-      res <- lapply(factors, function(factor) h2o.interaction(data, destination_frame=NULL, factor, pairwise, max_factors, min_occurrence))
+    res <- lapply(factors, function(factor) h2o.interaction(data, destination_frame=NULL, factor, pairwise, max_factors, min_occurrence))
     if (!missing(destination_frame)) {
       old <- h2o.cbind(res)
       new <- h2o.assign(old, destination_frame)
@@ -438,16 +438,16 @@ h2o.interaction <- function(data, destination_frame, factors, pairwise, max_fact
       return(h2o.cbind(res))
     }
   }
-
+  
   if(is.numeric(factors)) { factors <- colnames(data)[factors] }
   if(is.numeric(factors)) stop("factors cannot be numeric value(s)")
-
+  
   if(is.null(factors)) stop("factors not found")
   if(max_factors < 1) stop("max_factors cannot be < 1")
   if(!is.numeric(max_factors)) stop("max_factors must be a numeric value")
   if(min_occurrence < 1) stop("min_occurrence cannot be < 1")
   if(!is.numeric(min_occurrence)) stop("min_occurrence must be a numeric value")
-
+  
   parms <- list()
   if(missing(destination_frame) || !base::is.character(destination_frame) || !nzchar(destination_frame))
     parms$dest = .key.make(prefix = "interaction")
@@ -457,9 +457,9 @@ h2o.interaction <- function(data, destination_frame, factors, pairwise, max_fact
   parms$pairwise <- pairwise
   parms$max_factors <- max_factors
   parms$min_occurrence <- min_occurrence
-
+  
   res <- .h2o.__remoteSend(page = 'Interaction', method = "POST", .params = parms)
-
+  
   job_key  <- res$key$name
   dest_key <- res$dest$name
   .h2o.__waitOnJob(job_key)
@@ -548,22 +548,22 @@ h2o.insertMissingValues <- function(data, fraction=0.1, seed=-1) {
 #' @export
 h2o.splitFrame <- function(data, ratios = 0.75, destination_frames, seed = -1) {
   chk.H2OFrame(data)
-
+  
   if (! is.numeric(ratios)) stop("ratios must be of type numeric")
   if (length(ratios) < 1) stop("ratios must have length of at least 1")
-
+  
   if (! missing(destination_frames)) {
     if (! base::is.character(destination_frames)) stop("destination_frames must be of type character")
     if ((length(ratios) + 1) != length(destination_frames)) {
       stop("The number of provided destination_frames must be one more than the number of provided ratios")
     }
   }
-
+  
   if (! is.numeric(seed)) stop("seed must be an integer")
-
+  
   num_slices = length(ratios) + 1
   boundaries = numeric(length(ratios))
-
+  
   i = 1
   last_boundary = 0
   while (i < num_slices) {
@@ -571,21 +571,21 @@ h2o.splitFrame <- function(data, ratios = 0.75, destination_frames, seed = -1) {
     if (ratio < 0) {
       stop("Ratio must be greater than 0")
     }
-
+    
     boundary = last_boundary + ratio
     if (boundary >= 1) {
       stop("Ratios must add up to less than 1.0")
     }
-
+    
     boundaries[i] = boundary
     last_boundary = boundary
-
+    
     i = i + 1
   }
-
+  
   splits = list()
   tmp_runif = h2o.runif(data, seed)
-
+  
   i = 1
   while (i <= num_slices) {
     if (i == 1) {
@@ -601,7 +601,7 @@ h2o.splitFrame <- function(data, ratios = 0.75, destination_frames, seed = -1) {
       upper_boundary = boundaries[i]
       tmp_slice = data[((tmp_runif > lower_boundary) & (tmp_runif <= upper_boundary)),]
     }
-
+    
     if (missing(destination_frames)) {
       splits = c(splits, tmp_slice)
     } else {
@@ -609,10 +609,10 @@ h2o.splitFrame <- function(data, ratios = 0.75, destination_frames, seed = -1) {
       tmp_slice2 = h2o.assign(tmp_slice, destination_frame_id)
       splits = c(splits, tmp_slice2)
     }
-
+    
     i = i + 1
   }
-
+  
   return(splits)
 }
 
@@ -810,7 +810,7 @@ h2o.columns_by_type <- function(object,coltype="numeric",...){
   }
   if(!(coltype %in% c("numeric", "categorical", "string", "time", "uuid", "bad"))){
     stop(paste0("`coltype` must be one of the following: numeric, categorical, string, time, uuid, or bad but got "
-    , coltype))
+                , coltype))
   }
   .eval.scalar(.newExpr("columnsByType", object,.quote(coltype))) + 1
 }
@@ -861,7 +861,7 @@ h2o.dct <- function(data, destination_frame, dimensions, inverse=FALSE) {
   if (!missing(destination_frame))
     params$destination_frame <- destination_frame
   params$inverse <- inverse
-
+  
   res <- .h2o.__remoteSend(method="POST", h2oRestApiVersion = 99, "DCTTransformer", .params = params)
   job_key <- res$key$name
   .h2o.__waitOnJob(job_key)
@@ -1124,7 +1124,7 @@ h2o.anyFactor <- function(x) as.logical(.eval.scalar(.newExpr("any.factor", x)))
     if( hi < lo ) { tmp <- hi; hi <- lo; lo <- tmp }
     return(paste0("[", (if(lo<0) lo else (lo-1)), ":", hi-lo+1L, "]"))
   }
-
+  
   sel <- if( !is.null(raw_sel) ) raw_sel else eval(sel)
   if( is.numeric(sel) ) { # number list for column selection; zero based
     sel2 <- lapply(sel,function(x) if( x==0 ) stop("Cannot select row or column 0") else if( x > 0 ) x-1 else x)
@@ -1152,7 +1152,7 @@ NULL
 #' @export
 `[.H2OFrame` <- function(data,row,col,drop=TRUE) {
   chk.H2OFrame(data)
-
+  
   # This function is called with a huge variety of argument styles
   # Here's the breakdown:
   #   Style          Type #args  Description
@@ -1231,7 +1231,7 @@ NULL
 #' @param e2 object
 #' @export
 Ops.H2OFrame <- function(e1,e2) {
-
+  
   if( missing(e2) && .Generic=="-" ) return(1-e1)
   .newExpr(.Generic,
            if( base::is.character(e1) ) .quote(e1) else e1,
@@ -1257,7 +1257,7 @@ Math.H2OFrame <- function(x,...) .newExprList(.Generic,list(x,...))
 #' @param na.rm logical. whether or not missing values should be removed
 #' @export
 Summary.H2OFrame <- function(x,...,na.rm) {
-#  if( na.rm ) stop("na.rm versions not impl")
+  #  if( na.rm ) stop("na.rm versions not impl")
   # Eagerly evaluation, to produce a scalar
   if( na.rm )
     res <- .eval.scalar(.newExprList(paste0(.Generic,"NA"),list(x,...)))
@@ -1488,7 +1488,7 @@ h2o.setLevels <- function(x, levels) .newExpr("setDomain", chk.H2OFrame(x), leve
 h2o.head <- function(x,n=6L,...) {
   stopifnot(length(n) == 1L)
   n <- if (n < 0L) max(nrow(x) + n, 0L)
-       else        min(n, nrow(x))
+  else        min(n, nrow(x))
   if( n >= 0L && n <= 1000L ) # Short version, just report the cached internal DF
     head(.fetch.data(x,n),n)
   else # Long version, fetch all asked for "the hard way"
@@ -1574,14 +1574,14 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
   if (length(l <- list(...)) && any("give.length" == names(l)))
     invisible(NextMethod("str", ...))
   else if( !cols ) invisible(NextMethod("str", give.length = FALSE, ...))
-
+  
   if( cols ) {
     nc <- ncol(object)
     nr <- nrow(object)
     cc <- colnames(object)
     width <- max(nchar(cc))
     df <- head(.fetch.data(object,10L),10L)
-
+    
     # header statement
     cat("\nH2OFrame '", attr(object, "id"), "':\t", nr, " obs. of  ", nc, " variable(s)", "\n", sep = "")
     l <- list()
@@ -1630,7 +1630,7 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
   allRow <- missing(row)
   allCol <- missing(col)
   if( !allCol && is.na(col) ) col <- as.list(match.call())$col
-
+  
   # Named column assignment; the column name was passed in as "row"
   # fr["baz"] <- qux
   # fr$ baz   <- qux
@@ -1639,7 +1639,7 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
     allCol <- FALSE
     col <- row
   }
-
+  
   if(!allRow && !is.numeric(row))
     stop("`row` must be missing or a numeric vector")
   if(!allCol && !is.numeric(col) && !base::is.character(col))
@@ -1649,7 +1649,7 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
     else if( !is.numeric(value) && !base::is.character(value) )
       stop("`value` can only be an H2OFrame object or a numeric or character vector")
   }
-
+  
   # Row arg is missing, means "all the rows"
   if(allRow) rows <- paste0("[]")  # Shortcut for "all rows"
   else {
@@ -1658,7 +1658,7 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
     else
       rows <- row
   }
-
+  
   name <- NA
   if( allCol ) {   # Col arg is missing, means "all the cols"
     cols <- paste0("[]")  # Shortcut for "all cols"
@@ -1671,10 +1671,10 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
       }
     } else idx <- col
     if( is.null(value) ) return(`[.H2OFrame`(data,row=-idx)) # Assign a null: delete by selecting inverse columns
-      if( idx==(ncol(data)+1) && is.na(name) ) name <- paste0("C",idx)
+    if( idx==(ncol(data)+1) && is.na(name) ) name <- paste0("C",idx)
     cols <- .row.col.selector(idx, envir=parent.frame())
   }
-
+  
   if( base::is.character(value) ) value <- .quote(value)
   # Set col name and return updated frame
   if( is.na(name) ) .newExpr(":=", data, value, cols, rows)
@@ -1733,11 +1733,11 @@ str.H2OFrame <- function(object, ..., cols=FALSE) {
 #' }
 #' @export
 h2o.quantile <- function(x,
-                     # AUTOGENERATED params
-                     probs = c(0.001, 0.01, 0.1, 0.25, 0.333, 0.5, 0.667, 0.75, 0.9, 0.99, 0.999),
-                     combine_method = c("interpolate", "average", "avg", "low", "high"),
-                     weights_column = NULL,
-                     ...)
+                         # AUTOGENERATED params
+                         probs = c(0.001, 0.01, 0.1, 0.25, 0.333, 0.5, 0.667, 0.75, 0.9, 0.99, 0.999),
+                         combine_method = c("interpolate", "average", "avg", "low", "high"),
+                         weights_column = NULL,
+                         ...)
 {
   # verify input parameters
   if (!is(x, "H2OFrame")) stop("`x` must be an H2OFrame object")
@@ -1755,13 +1755,13 @@ h2o.quantile <- function(x,
     }
     if (!(weights_column %in% names(x))) stop("`weights_column` must be a column in x")
   }
-
+  
   combine_method = match.arg(combine_method)
   # match.arg converts partial string "lo"->"low", "hi"->"high" etc built in
   #           is the standard way to avoid warning: "the condition has length > 1 and only first will be used"
   #       and stops if argument wasn't found, built-in
   if (combine_method == "avg") combine_method = "average"  # 'avg'->'average' is too much for match.arg though
-
+  
   #if(type != 2 && type != 7) stop("type must be either 2 (mean interpolation) or 7 (linear interpolation)")
   #if(type != 7) stop("Unimplemented: Only type 7 (linear interpolation) is supported from the console")
   res <- .newExpr("quantile", x, .num.list(probs), .quote(combine_method), weights_column)
@@ -1808,7 +1808,7 @@ h2o.summary <- function(object, factors=6L, exact_quantiles=FALSE, ...) {
   FORMAT.DIGITS <- 4L
   cnames <- colnames(object)
   missing <- list()
-
+  
   # for each numeric column, collect [min,1Q,median,mean,3Q,max]
   # for each categorical column, collect the first 6 domains
   # allow for optional parameter in ... factors=N, for N domain levels. Or could be the string "all". N=6 by default.
@@ -1818,14 +1818,14 @@ h2o.summary <- function(object, factors=6L, exact_quantiles=FALSE, ...) {
   cols <- sapply(col.sums, function(col) {
     col.sum <- col
     col.type <- col.sum$type  # enum, string, int, real, time, uuid
-
+    
     # numeric column: [min,1Q,median,mean,3Q,max]
     if( col.type %in% c("real", "int") ) {
       cmin <- cmax <- cmean <- c1Q <- cmedian <- c3Q <- NaN                                              # all 6 values are NaN by default
       if( !(is.null(col.sum$mins) || length(col.sum$mins) == 0L) ) cmin <- min(col.sum$mins,na.rm=TRUE)  # set the min
       if( !(is.null(col.sum$maxs) || length(col.sum$maxs) == 0L) ) cmax <- max(col.sum$maxs,na.rm=TRUE)  # set the max
       if( !(is.null(col.sum$mean))                               ) cmean<- col.sum$mean                  # set the mean
-
+      
       if (exact_quantiles) {
         quantiles <- h2o.quantile(object[col.sum$label],c(.25,.5,.75)) # set the 1st quartile, median, and 3rd quartile
         if( !is.null(quantiles) ) {
@@ -1840,19 +1840,19 @@ h2o.summary <- function(object, factors=6L, exact_quantiles=FALSE, ...) {
         cmedian <- values[2]
         c3Q     <- values[3]
       }
-
+      
       missing.count <- NULL
       if( !is.null(col.sum$missing_count) && col.sum$missing_count > 0L ) missing.count <- col.sum$missing_count    # set the missing count
-
+      
       params <- format(signif( as.numeric( c(cmin, c1Q, cmedian, cmean, c3Q, cmax) ), SIG.DIGITS), digits=FORMAT.DIGITS)   # do some formatting for pretty printing
       result <- c(paste0("Min.   :", params[1L], "  "), paste0("1st Qu.:", params[2L], "  "),
-                        paste0("Median :", params[3L], "  "), paste0("Mean   :", params[4L], "  "),
-                        paste0("3rd Qu.:", params[5L], "  "), paste0("Max.   :", params[6L], "  "))
-
+                  paste0("Median :", params[3L], "  "), paste0("Mean   :", params[4L], "  "),
+                  paste0("3rd Qu.:", params[5L], "  "), paste0("Max.   :", params[6L], "  "))
+      
       # return summary string for this column
       if( is.null(missing.count) ) result <- result
       else                         result <- c(result, paste0("NA's   :",missing.count,"  "))
-
+      
       result
     } else if( col.type == "enum" ) {
       domains <- col.sum$domain
@@ -1866,39 +1866,39 @@ h2o.summary <- function(object, factors=6L, exact_quantiles=FALSE, ...) {
       # create a dataframe of the counts and factor levels, then sort in descending order (most frequent levels at the top)
       df.domains <- data.frame(domain=domains,cnts=domain.cnts, stringsAsFactors=FALSE)
       df.domains <- df.domains[with(df.domains, order(-cnts)),]  # sort in descending order
-
+      
       # TODO: check out that NA is valid domain level in enum column... get missing and NA together here, before subsetting
       row.idx.NA <- which( df.domains[,1L] == "NA")
       if( length(row.idx.NA) != 0 ) {
         missing.count <- missing.count + df.domains[row.idx.NA,2L]  # combine the missing and NAs found here
         df.domains <- df.domains[-row.idx.NA,]  # remove the NA level
       }
-
+      
       factors <- min(factors, nrow(df.domains))
       df.domains.subset <- df.domains[1L:factors,]      # subset to the top `factors` (default is 6)
-
+      
       # if there are any missing levels, plonk them down here now after we've subset.
       if( !is.null(missing.count) && !is.na(missing.count) && missing.count > 0L ) df.domains.subset <- rbind( df.domains.subset, c("NA", missing.count))
-
+      
       # fish out the domains
       domains <- as.character(df.domains.subset[,1L])
-
+      
       # fish out the counts
       counts <- as.character(df.domains.subset[,2L])
-
+      
       # compute a width for the factor levels and also one for the counts
       width <- c( max(nchar(domains),0L, na.rm = TRUE), max(nchar(counts),0L, na.rm = TRUE) )
       # construct the result
       paste0(domains,sapply(domains, function(x) {
-                      x <- max(0, nchar(x), na.rm = TRUE)
-                      ifelse(width[1L] == x, "", paste(rep(' ', width[1L] - x), collapse='')) }),":",
-                     sapply(counts,  function(y) {
-                      y <- max(0, nchar(y), na.rm = TRUE)
-                      ifelse(width[2L] == y, "", paste(rep(' ', width[2L] - y), collapse='')) }), counts, " ")
-
+        x <- max(0, nchar(x), na.rm = TRUE)
+        ifelse(width[1L] == x, "", paste(rep(' ', width[1L] - x), collapse='')) }),":",
+        sapply(counts,  function(y) {
+          y <- max(0, nchar(y), na.rm = TRUE)
+          ifelse(width[2L] == y, "", paste(rep(' ', width[2L] - y), collapse='')) }), counts, " ")
+      
     } else {
       # types are time, uuid, string ... ignore for now?
-#      c(paste0(col.type, ": ignored"))
+      #      c(paste0(col.type, ": ignored"))
       NULL
     }
   })
@@ -1914,10 +1914,10 @@ h2o.summary <- function(object, factors=6L, exact_quantiles=FALSE, ...) {
       result <- as.table(cols)
     } else {
       cols <- data.frame( lapply(cols, function(col) {
-                  if( length(col) < max.len ) c(col, rep("", max.len-length(col)))  # pad out result with "" for the prettiest of pretty printing... my pretty... and your little dog TOO! MUAHAHHAHA
-                  else col                                                          # no padding necessary!
-                }), stringsAsFactors=FALSE)                                         # keep as strings...
-
+        if( length(col) < max.len ) c(col, rep("", max.len-length(col)))  # pad out result with "" for the prettiest of pretty printing... my pretty... and your little dog TOO! MUAHAHHAHA
+        else col                                                          # no padding necessary!
+      }), stringsAsFactors=FALSE)                                         # keep as strings...
+      
       result <- as.table(as.matrix(cols))
     }
   }
@@ -1951,19 +1951,19 @@ h2o.summary <- function(object, factors=6L, exact_quantiles=FALSE, ...) {
 h2o.describe <- function(frame) {
   fr.sum <- .h2o.__remoteSend(paste0("Frames/", h2o.getId(frame), "/summary"), method = "GET", `_exclude_fields`="frames/columns/data,frames/columns/domain,frames/columns/histogram_bins,frames/columns/percentiles")$frames[[1]]
   res <- data.frame(t(sapply(fr.sum$columns, function(col) {
-                                    c(col$label,
-                                      col$type,
-                                      col$missing_count,
-                                      col$zero_count,
-                                      col$positive_infinity_count,
-                                      col$negative_infinity_count,
-                                      col$mins[1],
-                                      col$maxs[1],
-                                      ifelse(col$mean=="NaN", NA, col$mean),
-                                      ifelse(col$sigma=="NaN",NA, col$sigma),
-                                      ifelse(col$type=="enum", col$domain_cardinality, NA)
-                                    )
-         })))
+    c(col$label,
+      col$type,
+      col$missing_count,
+      col$zero_count,
+      col$positive_infinity_count,
+      col$negative_infinity_count,
+      col$mins[1],
+      col$maxs[1],
+      ifelse(col$mean=="NaN", NA, col$mean),
+      ifelse(col$sigma=="NaN",NA, col$sigma),
+      ifelse(col$type=="enum", col$domain_cardinality, NA)
+    )
+  })))
   names(res) <- c("Label", "Type", "Missing", "Zeros", "PosInf", "NegInf", "Min", "Max", "Mean", "Sigma", "Cardinality")
   res
 }
@@ -2512,7 +2512,7 @@ h2o.exp <- function(x) {
 #' @export
 h2o.log <- function(x) {
   log(x)
-
+  
 }
 
 #'
@@ -2640,7 +2640,7 @@ h2o.max <- function(x,na.rm = FALSE) {
 #' @seealso \code{\link[base]{nrow}} for the base R implementation.
 #' @export
 h2o.nrow <- function(x) {
- nrow(x)
+  nrow(x)
 }
 
 #'
@@ -2651,7 +2651,7 @@ h2o.nrow <- function(x) {
 #' @seealso \code{\link[base]{ncol}} for the base R implementation.
 #' @export
 h2o.ncol <- function(x) {
- ncol(x)
+  ncol(x)
 }
 
 #'
@@ -2678,11 +2678,31 @@ h2o.range <- function(x,na.rm = FALSE,finite = FALSE) {
 #'
 #' @param x An \code{R} data frame.
 #' @param destination_frame A string with the desired name for the H2OFrame.
+#' @param \dots arguments passed to \code{as.data.frame} method.
 #' @export
+#' @examples 
+#' h2o.init()
+#' hi <- as.h2o(iris)
+#' he <- as.h2o(euro)
+#' hl <- as.h2o(letters)
+#' hm <- as.h2o(m <- Matrix::sparse.model.matrix(activ ~ day + time, data = beaver1))
+#' stopifnot(is.h2o(hi), dim(hi)==dim(iris),
+#'           is.h2o(he), dim(he)==c(length(euro),1L),
+#'           is.h2o(hl), dim(hl)==c(length(letters),1L),
+#'           is.h2o(hm), dim(hm)==dim(m))
 as.h2o <-function(x, destination_frame="", ...) {
   .key.validate(destination_frame)
+  
   UseMethod("as.h2o")
 }
+
+#' Is H2O Frame object
+#'
+#' Test if H2OFrame class.
+#'
+#' @param x An \code{R} object.
+#' @export
+is.h2o <- is.H2OFrame <- function(x) inherits(x, "H2OFrame")
 
 as.h2o.default <- function(x, destination_frame="", ...) {
   x <- if( length(x)==1L )
@@ -2692,7 +2712,7 @@ as.h2o.default <- function(x, destination_frame="", ...) {
   as.h2o.data.frame(x, destination_frame=destination_frame)
 }
 
-h2o.class.map <- function()
+h2o.class.map <- function() {
   c("integer64"="numeric",
     "integer"="numeric",
     "double"="numeric",
@@ -2701,33 +2721,29 @@ h2o.class.map <- function()
     "factor"="enum",
     "character"="string",
     "Date"="Time")
+}
 
 as.h2o.data.frame <- function(x, destination_frame= "", ...) {
   dest_name <- if( destination_frame=="") deparse(substitute(x)) else destination_frame
   if( nzchar(dest_name) && regexpr("^[a-zA-Z_][a-zA-Z0-9_.]*$", dest_name)[1L] == -1L )
     dest_name <- destination_frame
-
   # TODO: Be careful, there might be a limit on how long a vector you can define in console
   tmpf <- tempfile(fileext = ".csv")
-  types <- sapply(x, class)
-  types <- gsub("integer64", "numeric", types)
-  types <- gsub("integer", "numeric", types)
-  types <- gsub("double", "numeric", types)
-  types <- gsub("complex", "numeric", types)
-  types <- gsub("logical", "enum", types)
-  types <- gsub("factor", "enum", types)
-  types <- gsub("character", "string", types)
-  types <- gsub("Date", "Time", types)
+  types <- sapply(x, function(x) class(x)[1L]) # ensure vector returned
+  class.map <- h2o.class.map()
+  # remap R data types to java data types
+  types[types %in% names(class.map)] <- class.map[types[types %in% names(class.map)]]
   write.csv(x, file = tmpf, row.names = FALSE, na="NA_h2o")
   h2f <- h2o.uploadFile(tmpf, destination_frame = dest_name, header = TRUE, col.types=types,
                         col.names=colnames(x, do.NULL=FALSE, prefix="C"), na.strings=rep(c("NA_h2o"),ncol(x)))
-}
-
   file.remove(tmpf)
   h2f
 }
 
 as.h2o.Matrix <- function(x, destination_frame="", ...) {
+  dest_name <- if( destination_frame=="") deparse(substitute(x)) else destination_frame
+  if( nzchar(dest_name) && regexpr("^[a-zA-Z_][a-zA-Z0-9_.]*$", dest_name)[1L] == -1L )
+    dest_name <- destination_frame
   sparse <- .h2o.is.sparse.matrix(x)
   if(!sparse)
     return(as.h2o.default(x, destination_frame=destination_frame, ...))
@@ -2735,6 +2751,7 @@ as.h2o.Matrix <- function(x, destination_frame="", ...) {
   .h2o.write.matrix.svmlight(x, file = tmpf)
   h2f <- .h2o.readSVMLight(tmpf, destination_frame = dest_name)
   file.remove(tmpf)
+  message("using sparse matrix!!")
   h2f
 }
 
@@ -2774,14 +2791,14 @@ as.data.frame.H2OFrame <- function(x, ...) {
   # Versions of R prior to 3.1 should not use hex string.
   # Versions of R including 3.1 and later should use hex string.
   use_hex_string <- getRversion() >= "3.1"
-
+  
   urlSuffix <- paste0('DownloadDataset',
                       '?frame_id=', URLencode( h2o.getId(x)),
                       '&hex_string=', as.numeric(use_hex_string))
-
+  
   ttt <- .h2o.doSafeGET(urlSuffix = urlSuffix)
   n <- nchar(ttt)
-
+  
   # Delete last 1 or 2 characters if it's a newline.
   # Handle \r\n (for windows) or just \n (for not windows).
   chars_to_trim <- 0L
@@ -2793,12 +2810,12 @@ as.data.frame.H2OFrame <- function(x, ...) {
       if (c == "\r") chars_to_trim <- chars_to_trim + 1L
     }
   }
-
+  
   if (chars_to_trim > 0L) {
     ttt2 <- substr(ttt, 1L, n-chars_to_trim)
     ttt <- ttt2
   }
-
+  
   # Get column types from H2O to set the dataframe types correctly
   colClasses <- attr(x, "types")
   colClasses <- gsub("numeric", NA, colClasses) # let R guess the appropriate numeric type
@@ -3132,7 +3149,7 @@ h2o.relevel <- function(x,y) {
 h2o.group_by <- function(data, by, ..., gb.control=list(na.methods=NULL, col.names=NULL)) {
   # Build the argument list: (GB data, [group.by] {agg col "na"}...)
   args <- list(chk.H2OFrame(data))
-
+  
   ### handle the columns
   # we accept: c('col1', 'col2'), 1:2, c(1,2) as column names.
   if(base::is.character(by)) {
@@ -3147,7 +3164,7 @@ h2o.group_by <- function(data, by, ..., gb.control=list(na.methods=NULL, col.nam
   if(group.cols <= 0L || group.cols > ncol(data))
     stop('Column ', group.cols, ' out of range for frame columns ', ncol(data), '.')
   args <- c(args,.row.col.selector(group.cols,envir=parent.frame()))
-
+  
   a <- substitute(list(...))
   a[[1]] <- NULL  # drop the wrapping list()
   nAggs <- length(a)  # the number of aggregates
@@ -3165,29 +3182,29 @@ h2o.group_by <- function(data, by, ..., gb.control=list(na.methods=NULL, col.nam
     if( is.numeric(agg[[2]]) || is.integer(agg[[2]]) ) { return(eval(agg[[2]])) }
     col.name <- eval(as.character(agg[[2]]), parent.frame())
     col.idx <- match(col.name, colnames(data))
-
+    
     # no such column, stop!
     if( is.na(col.idx) ) stop('No column named ', col.name, ' in ', substitute(data), '.')
-
+    
     # got a good column index, return it.
     col.idx
   }, parent.frame()))
-
+  
   # default to "all" na.method
   na.methods.defaults <- rep("all", nAggs)
-
+  
   # 1 -> 0 based indexing of columns
   col.idxs <- col.idxs - 1
-
+  
   ### NA handling ###
-
+  
   # go with defaults
   if( is.null(gb.control$na.methods) ) {
     gb.control$na.methods <- na.methods.defaults
-
-  # have fewer na.methods passed in than aggregates to compute -- pad with defaults
+    
+    # have fewer na.methods passed in than aggregates to compute -- pad with defaults
   } else if( length(gb.control$na.methods) < nAggs ) {
-
+    
     # special case where only 1 method was passed, and so that is the method for all aggregates
     if( length(gb.control$na.methods) == 1L ) {
       gb.control$na.methods <- rep(gb.control$na.methods, nAggs)
@@ -3195,21 +3212,21 @@ h2o.group_by <- function(data, by, ..., gb.control=list(na.methods=NULL, col.nam
       n.missing <- nAggs - length(gb.control$na.methods)
       gb.control$na.methods <- c(gb.control$na.methods, rep("all", n.missing))
     }
-
-  # have more na.methods than aggregates -- rm extras
+    
+    # have more na.methods than aggregates -- rm extras
   } else if( length(gb.control$na.methods) > nAggs ) {
     gb.control$na.methods <- gb.control$na.methods[1:nAggs]
   } else {
     # no problem...
   }
-
+  
   ### End NA handling ###
-
+  
   # Append the aggregates!  Append triples: aggregate, column, na-handling
   for( idx in 1:nAggs ) {
     args <- c(args, agg.methods[idx], eval(col.idxs[idx]), .quote(gb.control$na.methods[idx]))
   }
-
+  
   # Create the group by AST
   .newExprList("GB",args)
 }
@@ -3253,35 +3270,35 @@ h2o.impute <- function(data, column=0, method=c("mean","median","mode"), # TODO:
   # TODO: "bfill" back fill the missing value with the next non-missing value in the vector
   # TODO: "ffill" front fill the missing value with the most-recent non-missing value in the vector.
   # TODO: #'  @param max_gap  The maximum gap with which to fill (either "ffill", or "bfill") missing values. If more than max_gap consecutive missing values occur, then those values remain NA.
-
+  
   # this AST: (h2o.impute %fr #colidx method combine_method inplace max_gap by)
   chk.H2OFrame(data)
   if( !is.null(groupByFrame) ) chk.H2OFrame(groupByFrame)
   else groupByFrame <- "_"  # NULL value for rapids backend
-
+  
   if( is.null(values) ) values <- "_"  # TODO: exposes categorical-int mapping! Fix this with an object that hides mapping...
-
+  
   # sanity check `column` then convert to 0-based index.
   if( length(column) > 1L ) stop("`column` must be a single column.")
   col.id <- -1L
   if( is.numeric(column) ) col.id <- column - 1L
   else                     col.id <- match(column,colnames(data)) - 1L
   if( col.id > (ncol(data)-1L) ) stop("Column ", col.id, " out of range.")
-
+  
   # choose "mean" by default for numeric columns. "mode" for factor columns
   if( length(method) > 1) method <- "mean"
-
+  
   # choose "interplate" by default for combine_method
   if( length(combine_method) > 1L ) combine_method <- "interpolate"
   if( combine_method=="lo" ) combine_method <- "low"
   if( combine_method=="hi" ) combine_method <- "high"
-
+  
   # sanity check method, column type, by parameters
   if( method=="median" ) {
     # no by and median
     if( !is.null(by) ) stop("Unimplemented: No `by` and `median`. Please select a different method.")
   }
-
+  
   # handle the data
   gb.cols <- "[]"
   if( !is.null(by) ) {
@@ -3289,13 +3306,13 @@ h2o.impute <- function(data, column=0, method=c("mean","median","mode"), # TODO:
       vars <- match(by, colnames(data))
       if( any(is.na(vars)) )
         stop('No column named ', by, ' in ', substitute(data), '.')
-      } else if(is.integer(by)) { vars <- by }
-      else if(is.numeric(by)) {   vars <- as.integer(by) }  # this will happen eg c(1,2,3)
-      if( vars <= 0L || vars > (ncol(data)) )
-        stop('Column ', vars, ' out of range for frame columns ', ncol(data), '.')
-      gb.cols <- .row.col.selector(vars,envir=parent.frame())
+    } else if(is.integer(by)) { vars <- by }
+    else if(is.numeric(by)) {   vars <- as.integer(by) }  # this will happen eg c(1,2,3)
+    if( vars <= 0L || vars > (ncol(data)) )
+      stop('Column ', vars, ' out of range for frame columns ', ncol(data), '.')
+    gb.cols <- .row.col.selector(vars,envir=parent.frame())
   }
-
+  
   if( gb.cols == "[]" && base::is.character(groupByFrame) ) {res <- .eval.scalar(.newExpr("h2o.impute",data, col.id, .quote(method), .quote(combine_method), gb.cols, groupByFrame, values)) }
   else { res <- .eval.frame(.newExpr("h2o.impute",data, col.id, .quote(method), .quote(combine_method), gb.cols, groupByFrame, values)) }
   .flush.data(data); .fetch.data(data,10L)
@@ -3344,7 +3361,7 @@ range.H2OFrame <- function(...,na.rm = TRUE) c(min(...,na.rm=na.rm), max(...,na.
 h2o.ddply <- function (X, .variables, FUN, ..., .progress = 'none') {
   .h2o.gc()
   chk.H2OFrame(X)
-
+  
   # we accept eg .(col1, col2), c('col1', 'col2'), 1:2, c(1,2)
   # as column names.  This is a bit complicated
   if(base::is.character(.variables)) {
@@ -3360,25 +3377,25 @@ h2o.ddply <- function (X, .variables, FUN, ..., .progress = 'none') {
   } else if(is.numeric(.variables)) {   # this will happen eg c(1,2,3)
     vars <- as.integer(.variables)
   }
-
+  
   # Change cols from 1 base notation to 0 base notation then verify the column is within range of the dataset
   if(vars <= 0L || vars > ncol(X))
     stop('Column ', vars, ' out of range for frame columns ', ncol(X), '.')
   vars <- .row.col.selector(vars,envir=parent.frame())
-
+  
   # Deal with extra arguments
   l <- list(...)
   extra_args = list()
   if(length(l) > 0L)
     extra_args <- sapply(l, .process.stmnt, list(), sys.parent(1))
-
+  
   # Process the function. Decide if it's an anonymous fcn, or a named one.
   fname <- as.character(substitute(FUN))
   if( typeof(FUN) == "builtin" || typeof(FUN) == "symbol") {
     if( fname %in% .h2o.primitives ) return(.newExpr("ddply",X,vars,fname))
     stop(paste0("Function '",fname,"' not in .h2o.primitives list and not an anonymous function, unable to convert it to Currents"))
   }
-
+  
   # Look for an H2O function that works on an H2OFrame; it will be handed an H2OFrame of 1 col
   fr.name <- paste0(fname,".H2OFrame")
   if( exists(fr.name) ) {
@@ -3388,10 +3405,10 @@ h2o.ddply <- function (X, .variables, FUN, ..., .progress = 'none') {
     nargs <- length(args) - length(extra_args)
     if( nargs > 0 ) extra_args <- c(extra_args,tail(args,nargs))
     fcn <- if( length(extra_args)==0 ) fname
-           else paste0("{ COL . (",fname," COL ",paste(extra_args,collapse=" "),")}")
+    else paste0("{ COL . (",fname," COL ",paste(extra_args,collapse=" "),")}")
     return(.newExpr("ddply",X,vars,fcn))
   }
-
+  
   # Explode anonymous function into a Currents AST.  Pass along the dynamic
   # environment (not the static environment the H2O wrapper itself is compiled
   # in).  Unknown variables in the function body will be looked up in the
@@ -3423,7 +3440,7 @@ h2o.ddply <- function (X, .variables, FUN, ..., .progress = 'none') {
 #' @export
 apply <- function(X, MARGIN, FUN, ...) {
   if( !is.H2OFrame(X) ) return(base::apply(X,MARGIN,FUN,...))
-
+  
   # Margin must be 1 or 2 and specified
   if( missing(MARGIN) || !(length(MARGIN) <= 2L && all(MARGIN %in% c(1L, 2L))) )
     stop("MARGIN must be either 1 (rows), 2 (cols), or a vector containing both")
@@ -3434,20 +3451,20 @@ apply <- function(X, MARGIN, FUN, ...) {
   if( !is.null(.FUN) && !is.function(.FUN) )    stop("FUN must be an R function!")
   else if( is.null(.FUN) && !is.function(FUN) ) stop("FUN must be an R function")
   if( !is.null(.FUN) ) FUN <- as.name(FUN)
-
+  
   # Deal with extra arguments
   l <- list(...)
   extra_args = list()
   if(length(l) > 0L)
     extra_args <- sapply(l, .process.stmnt, list(), sys.parent(1))
-
+  
   # Process the function. Decide if it's an anonymous fcn, or a named one.
   fname <- as.character(substitute(FUN))
   if( typeof(FUN) == "builtin" || typeof(FUN) == "symbol") {
     if( fname %in% .h2o.primitives ) return(.newExpr("apply",X,MARGIN,fname))
     stop(paste0("Function '",fname,"' not in .h2o.primitives list and not an anonymous function, unable to convert it to Currents"))
   }
-
+  
   # Look for an H2O function that works on an H2OFrame; it will be handed an H2OFrame of 1 col
   fr.name <- paste0(fname,".H2OFrame")
   if( exists(fr.name) ) {
@@ -3457,10 +3474,10 @@ apply <- function(X, MARGIN, FUN, ...) {
     nargs <- length(args) - length(extra_args)
     if( nargs > 0 ) extra_args <- c(extra_args,tail(args,nargs))
     fcn <- if( length(extra_args)==0 ) fname
-           else paste0("{ COL . (",fname," COL ",paste(extra_args,collapse=" "),")}")
+    else paste0("{ COL . (",fname," COL ",paste(extra_args,collapse=" "),")}")
     return(.newExpr("apply",X,MARGIN,fcn))
   }
-
+  
   # Explode anonymous function into a Currents AST.  Pass along the dynamic
   # environment (not the static environment the H2O wrapper itself is compiled
   # in).  Unknown variables in the function body will be looked up in the
